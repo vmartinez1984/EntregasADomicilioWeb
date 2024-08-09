@@ -1,26 +1,26 @@
 using AutoMapper;
 using EntregaADomicilio.Web.Dtos;
 using EntregaADomicilio.Web.Entities;
-using EntregaADomicilio.Web.Interfaces;
 using EntregaADomicilio.Web.Repositories;
+using EntregasADomicilioWeb.BusinessLayer;
 
 namespace EntregaADomicilio.Web.BusinessLayer
 {
     public class PlatilloBl //: IPlatilloBl
     {
         private readonly Repository _repository;
-        private readonly IAlmacenadorDeArchivos _almacenadorDeArchivosFirebaseStorage;
+        private readonly ArchivoBl _archivoBl;
         private readonly IMapper _mapper;
         private readonly string _contenedor = "platillos";
 
         public PlatilloBl(
             Repository repositorySql,
-            IAlmacenadorDeArchivos almacenadorDeArchivosFirebaseStorage,
+            ArchivoBl archivoBl,
             IMapper mapper
         )
         {
             _repository = repositorySql;
-            _almacenadorDeArchivosFirebaseStorage = almacenadorDeArchivosFirebaseStorage;
+            _archivoBl = archivoBl;
             _mapper = mapper;
         }
 
@@ -61,35 +61,9 @@ namespace EntregaADomicilio.Web.BusinessLayer
             string aliasDelArchivo;
 
             aliasDelArchivo = $"{platillo.EncodedKey}{Path.GetExtension(platillo.FormFile.FileName)}";
-            archivo = await GuardarEnAlamcenVMtz(platillo, aliasDelArchivo);
+            archivo = await _archivoBl.AgregarAsync(platillo.FormFile, aliasDelArchivo, _contenedor);
 
             return archivo;
-        }
-
-        private async Task<Archivo> GuardarEnAlamcenVMtz(PlatilloDtoIn platillo, string aliasDelArchivo)
-        {
-            try
-            {
-                string rutaDelArchvo;
-
-                rutaDelArchvo = await _almacenadorDeArchivosFirebaseStorage.Guardar(_contenedor, aliasDelArchivo, platillo.FormFile);
-
-                return new Archivo
-                {
-                    NombreDelArchivo = platillo.FormFile.FileName,
-                    NombreDelAlmacen = "FireStore",
-                    RutaDelArchivo = rutaDelArchvo,
-                    ContentType = platillo.FormFile.ContentType,
-                    EstaActivo = true,
-                    FechaDeRegistro = DateTime.Now,
-                    AliasDelArchivo = aliasDelArchivo
-                };
-            }
-            catch (Exception)
-            {
-
-                return null;
-            }
         }
 
         //public async Task BorrarAsync(int id)
@@ -120,15 +94,6 @@ namespace EntregaADomicilio.Web.BusinessLayer
         //    return bytes;
         //}
 
-        private async Task<byte[]> ObtenerBytesDeAlmacenAsync(Archivo archivo)
-        {
-            byte[] bytes = null;
-
-            bytes = await _almacenadorDeArchivosFirebaseStorage.Obtener(archivo.RutaDelArchivo);
-
-            return bytes;
-        }
-
         public async Task<List<PlatilloDto>> ObtenerTodosAsync(string restaurante, bool? estaActivo = true)
         {
             List<Platillo> entities;
@@ -157,7 +122,7 @@ namespace EntregaADomicilio.Web.BusinessLayer
 
             platillo = await _repository.Platillo.ObtenerPorIdAsync(restaurante, platilloId);
 
-            return await ObtenerBytesDeAlmacenAsync(platillo.Archivo);
+            return await _archivoBl.ObtenerBytesAsync(platillo.Archivo.RutaDelArchivo);
         }
 
         public async Task ActualizarAsync(string restaurante, string id, PlatilloDtoIn platillo)
@@ -168,15 +133,15 @@ namespace EntregaADomicilio.Web.BusinessLayer
             //platilloEntity = _mapper.Map(platillo, platilloEntity);
             platilloEntity.Descripcion = platillo.Descripcion;
             platilloEntity.Categoria = platillo.Categoria;
-            platilloEntity.Precio =platillo.Precio;
-            platilloEntity.EncodedKey = string.IsNullOrEmpty(platillo.EncodedKey)? platilloEntity.EncodedKey : platillo.EncodedKey;
+            platilloEntity.Precio = platillo.Precio;
+            platilloEntity.EncodedKey = string.IsNullOrEmpty(platillo.EncodedKey) ? platilloEntity.EncodedKey : platillo.EncodedKey;
             if (platillo.FormFile is not null)
             {
                 Archivo archivo;
 
                 archivo = platilloEntity.Archivo;
                 archivo.RutaDelArchivo =
-                await _almacenadorDeArchivosFirebaseStorage.EditarArchivo(
+                await _archivoBl.EditarAsync(
                     _contenedor,
                     archivo.AliasDelArchivo,
                     platillo.FormFile

@@ -12,6 +12,7 @@ namespace EntregaADomicilio.Web.Entities
         public string Id { get; set; }
 
         public string EncodedKey { get; set; }
+        
         public string NombreDelArchivo { get; set; }
         
         public string AliasDelArchivo { get; set; }
@@ -23,6 +24,8 @@ namespace EntregaADomicilio.Web.Entities
         public string NombreDelAlmacen { get; set; }
 
         public DateTime FechaDeRegistro { get; set; }
+
+        public string Nota { get; set; }
 
         public bool EstaActivo { get; set; }
     }

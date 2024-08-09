@@ -1,6 +1,8 @@
 using AutoMapper;
 using EntregaADomicilio.Web.Dtos;
 using EntregaADomicilio.Web.Entities;
+using EntregasADomicilioWeb.Dtos;
+using EntregasADomicilioWeb.Entities;
 
 namespace EntregaADomicilio.Web.Helpers
 {
@@ -12,6 +14,10 @@ namespace EntregaADomicilio.Web.Helpers
             CreateMap<Platillo, PlatilloDto>();
             CreateMap<CategoriaDtoIn,Categoria>();      
             CreateMap<Categoria, CategoriaDto>();
+            CreateMap<OpinionDtoIn, Opinion>(); 
+            CreateMap<Opinion, OpinionDto>();   
+            CreateMap<DireccionDtoIn,Direccion>();
+            CreateMap<InfoDtoIn, Informacion>();
         }
     }
 }
